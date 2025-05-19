@@ -18,12 +18,11 @@ export interface RegistrationHandlerResponse {
  * @param userId - The ID of the user.
  * @returns An object containing the message and the new state of the user.
  */
-export const handleMessage = (
+export const handleMessage = async (
   ctx: Context,
   userState: UserState,
   userMessage: string,
-  userId: number,
-): RegistrationHandlerResponse => {
+): Promise<RegistrationHandlerResponse> => {
   if (userMessage === '/cancel') {
     return {
       message:
@@ -33,11 +32,10 @@ export const handleMessage = (
   }
   switch (userState.journey) {
     case Journeys.registration:
-      const registrationResponse = handleRegistration(
+      const registrationResponse = await handleRegistration(
         ctx,
         userState.step,
         userMessage,
-        userId,
       );
       const { message, newUserState } =
         processRegistrationHandler(registrationResponse);

@@ -19,12 +19,14 @@ export interface RegistrationHandlerResponse {
  * @param userId - The ID of the user.
  * @returns An object containing the message and the new step of the registration process.
  */
-export const handleRegistration = (
+export const handleRegistration = async (
   ctx: Context,
   step: RegistrationSteps,
   userMessage: string,
-  userId: number,
-): { message: string; newStep: RegistrationSteps } => {
+): Promise<{
+  message: string;
+  newStep: RegistrationSteps;
+}> => {
   switch (step) {
     case RegistrationSteps.awaiting_name:
       return {
@@ -51,8 +53,8 @@ export const handleRegistration = (
       if (validatePhone(phone)) {
         return {
           message:
-            'Thank you! Your phone number has been verified and you are registered for the event.',
-          newStep: RegistrationSteps.registered,
+            'Thank you! Your phone number has been verified successfully.\nNow perform the payment and send me a screenshot of the transfer.',
+          newStep: RegistrationSteps.awaiting_payment,
         };
       } else {
         return {
@@ -63,15 +65,15 @@ export const handleRegistration = (
       }
 
     case RegistrationSteps.awaiting_payment:
-      if (userMessage !== 'confirm') {
-        return {
-          message:
-            'Please confirm your payment by typing "/confirm".',
-          newStep: step,
-        };
-      }
+      // if (userMessage !== 'confirm') {
+      //   return {
+      //     message:
+      //       'Please confirm your payment by typing "/confirm".',
+      //     newStep: step,
+      //   };
+      // }
 
-      return validatePayment(userId);
+      return await validatePayment(ctx);
 
     default:
       return {

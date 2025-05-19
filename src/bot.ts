@@ -42,6 +42,7 @@ bot.command('register', (ctx) => {
   userStates.set(userId, {
     journey: Journeys.registration,
     step: RegistrationSteps.awaiting_name,
+    // step: RegistrationSteps.awaiting_payment,
   });
 
   ctx.reply(
@@ -72,7 +73,7 @@ bot.command('help', (ctx) =>
 );
 
 // Handle other messages.
-bot.on('message', (ctx) =>
+bot.on('message', async (ctx) =>
   // Check if the user is in the 'awaiting_name' state
   {
     const userId = ctx.from?.id;
@@ -88,7 +89,8 @@ bot.on('message', (ctx) =>
     }
 
     const input = ctx.message?.text;
-    if (!input) {
+    const isPhoto = ctx.message?.photo;
+    if (!input && !isPhoto) {
       ctx.reply(
         'Hmm... I am not sure what you mean. Please verify your message and try again.',
         { parse_mode: 'HTML' },
@@ -96,11 +98,10 @@ bot.on('message', (ctx) =>
       return;
     }
 
-    const { message, newUserState } = handleMessage(
+    const { message, newUserState } = await handleMessage(
       ctx,
       state,
-      input,
-      userId,
+      input!,
     );
     ctx.reply(message);
     userStates.set(userId, newUserState);
