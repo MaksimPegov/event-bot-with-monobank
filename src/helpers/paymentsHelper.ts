@@ -1,89 +1,59 @@
-import { RegistrationSteps } from '../handlers/state';
-import Tesseract from 'tesseract.js';
-import OpenAI from 'openai';
 import { Context } from 'grammy';
+import { RegistrationSteps } from '../handlers/state';
 import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-});
 
 export const validatePayment = async (
   ctx: Context,
+  jarId: string,
 ): Promise<{
   message: string;
   newStep: RegistrationSteps;
 }> => {
   try {
-    // Check if the message contains a file
-    if (!ctx.message?.document && !ctx.message?.photo) {
-      throw new Error(
-        'No file found in the message. Please send an image of the payment.',
-      );
-    }
+    // Calculate timestamps for the last 30 days
+    const nowTimestamp = Math.floor(Date.now() / 1000);
+    const timestamp30daysAgo =
+      nowTimestamp - 30 * 24 * 60 * 60;
 
-    // Retrieve file metadata from Telegram
-    const file = await ctx.getFile();
-    const filePath = file.file_path;
-
-    if (!filePath) {
-      throw new Error('File path is undefined.');
-    }
-
-    // Download the file from Telegram servers
-    const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${filePath}`;
-    const response = await axios.get(fileUrl, {
-      responseType: 'arraybuffer',
-    });
-
-    // Save the file locally for Tesseract.js processing
-    const localFilePath = path.join(
-      __dirname,
-      'temp_image.png',
-    );
-    await fs.writeFile(localFilePath, response.data);
-
-    // Extract text from the image using Tesseract.js
-    const {
-      data: { text },
-    } = await Tesseract.recognize(localFilePath, 'eng'); // Changed language to 'eng' for better support
-
-    // Clean up the temporary file
-    await fs.unlink(localFilePath);
-
-    // Use OpenAI to validate the extracted text
-    const prompt = `Validate the following text for a completed transfer: "${text}" Respond with 'valid' if the text meets the criteria, otherwise respond with 'invalid'.`;
-    const responseAI = await openai.chat.completions.create(
+    // Make a request to the Monobank API
+    const response = await axios.get(
+      `https://api.monobank.ua/personal/statement/${jarId}/${timestamp30daysAgo}/${nowTimestamp}`,
       {
-        model: 'gpt-4.1-nano',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a payment validation assistant.',
-          },
-          { role: 'user', content: prompt },
-        ],
+        headers: {
+          'X-Token': process.env.MONOBANK_API_TOKEN || '',
+        },
       },
     );
+    console.log(
+      'Response from Monobank API:',
+      response.data,
+    );
 
-    const validation =
-      responseAI.choices[0].message?.content?.trim();
+    // Check if the response contains the expected data
+    const transactions = response.data;
+    if (Array.isArray(transactions)) {
+      const userId = ctx.from?.id?.toString();
+      const isValid = transactions.some(
+        (transaction) => transaction.comment === userId,
+      );
 
-    if (validation === 'valid') {
-      return {
-        message:
-          'Thank you! Your payment has been verified. You are registered for the event.',
-        newStep: RegistrationSteps.registered,
-      };
+      if (isValid) {
+        return {
+          message:
+            'Thank you! Your payment has been verified. You are registered for the event.',
+          newStep: RegistrationSteps.registered,
+        };
+      } else {
+        return {
+          message:
+            'The payment verification failed. Please ensure you added your user ID as a comment to the payment.',
+          newStep: RegistrationSteps.awaiting_payment,
+        };
+      }
     } else {
-      return {
-        message:
-          'The payment verification failed. Please ensure the image clearly shows a completed transfer of the bank name Monobank.',
-        newStep: RegistrationSteps.awaiting_payment,
-      };
+      throw new Error(
+        'Unexpected response format from Monobank API.',
+      );
     }
   } catch (error) {
     console.error(

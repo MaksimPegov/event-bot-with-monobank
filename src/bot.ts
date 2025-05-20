@@ -42,7 +42,7 @@ bot.command('register', (ctx) => {
   userStates.set(userId, {
     journey: Journeys.registration,
     step: RegistrationSteps.awaiting_name,
-    // step: RegistrationSteps.awaiting_payment,
+    // step: RegistrationSteps.awaiting_phone,
   });
 
   ctx.reply(
@@ -89,8 +89,7 @@ bot.on('message', async (ctx) =>
     }
 
     const input = ctx.message?.text;
-    const isPhoto = ctx.message?.photo;
-    if (!input && !isPhoto) {
+    if (!input) {
       ctx.reply(
         'Hmm... I am not sure what you mean. Please verify your message and try again.',
         { parse_mode: 'HTML' },
@@ -101,9 +100,9 @@ bot.on('message', async (ctx) =>
     const { message, newUserState } = await handleMessage(
       ctx,
       state,
-      input!,
+      input,
     );
-    ctx.reply(message);
+    ctx.reply(message, { parse_mode: 'HTML' });
     userStates.set(userId, newUserState);
   },
 );

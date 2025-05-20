@@ -5,6 +5,12 @@ import {
   validatePhone,
 } from '../helpers/registrationHelpers';
 import { validatePayment } from '../helpers/paymentsHelper';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const jarLink = process.env.JAR_LINK || '';
+const jarId = process.env.JAR_ID || '';
 
 export interface RegistrationHandlerResponse {
   message: string;
@@ -52,8 +58,7 @@ export const handleRegistration = async (
       const phone = userMessage.replace(/[\s\-()]/g, '');
       if (validatePhone(phone)) {
         return {
-          message:
-            'Thank you! Your phone number has been verified successfully.\nNow perform the payment and send me a screenshot of the transfer.',
+          message: `Thank you! Your phone number has been verified successfully.\nFinal step: please donate to the JAR:\n${jarLink}\nIMPORTANT: Please provide this code as a comment to your donation: <b><code>${ctx.from?.id}</code></b>.\nType /confirm when you are done.`,
           newStep: RegistrationSteps.awaiting_payment,
         };
       } else {
@@ -65,15 +70,7 @@ export const handleRegistration = async (
       }
 
     case RegistrationSteps.awaiting_payment:
-      // if (userMessage !== 'confirm') {
-      //   return {
-      //     message:
-      //       'Please confirm your payment by typing "/confirm".',
-      //     newStep: step,
-      //   };
-      // }
-
-      return await validatePayment(ctx);
+      return await validatePayment(ctx, jarId);
 
     default:
       return {
