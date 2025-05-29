@@ -41,8 +41,8 @@ bot.command('register', (ctx) => {
   // Set the user's state to 'awaiting_name'
   userStates.set(userId, {
     journey: Journeys.registration,
-    step: RegistrationSteps.awaiting_name,
-    // step: RegistrationSteps.awaiting_phone,
+    // step: RegistrationSteps.awaiting_name,
+    step: RegistrationSteps.awaiting_payment,
   });
 
   ctx.reply(

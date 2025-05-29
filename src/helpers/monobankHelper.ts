@@ -1,0 +1,77 @@
+import axios from 'axios';
+
+let cachedResponse: any = null;
+let lastRequestTimestamp: number | null = null;
+
+export type fetchMonobankDataResponse = {
+  data: any;
+  timeLeft: number | null;
+};
+
+/**
+ * Fetches Monobank data for a specific jar ID and user timestamp.
+ * Caches the response and manages request timing to avoid hitting the API too frequently.
+ *
+ * @param jarId - The ID of the jar to fetch data for.
+ * @param userTimestamp - The timestamp provided by the user to check against the last request.
+ * @returns An object containing the fetched data and time left until the next request can be made.
+ */
+
+export const fetchMonobankData = async (
+  jarId: string,
+  userTimestamp: number,
+): Promise<fetchMonobankDataResponse> => {
+  const nowTimestamp = Math.floor(Date.now() / 1000);
+
+  // Check if the user's timestamp is earlier than the last request timestamp
+  if (
+    lastRequestTimestamp &&
+    userTimestamp < lastRequestTimestamp
+  ) {
+    return {
+      data: cachedResponse,
+      timeLeft: null,
+    };
+  }
+
+  // Check if the last request was made less than 1 minute ago
+  if (
+    lastRequestTimestamp &&
+    nowTimestamp - lastRequestTimestamp < 60
+  ) {
+    const timeLeft =
+      60 - (nowTimestamp - lastRequestTimestamp);
+    return {
+      data: null,
+      timeLeft,
+    };
+  }
+
+  // Perform the request
+  try {
+    const timestamp30daysAgo =
+      nowTimestamp - 30 * 24 * 60 * 60;
+    const response = await axios.get(
+      `https://api.monobank.ua/personal/statement/${jarId}/${timestamp30daysAgo}/${nowTimestamp}`,
+      {
+        headers: {
+          'X-Token': process.env.MONOBANK_API_TOKEN || '',
+        },
+      },
+    );
+
+    // Cache the response and update the last request timestamp
+    cachedResponse = response.data;
+    lastRequestTimestamp = nowTimestamp;
+
+    return {
+      data: cachedResponse,
+      timeLeft: null,
+    };
+  } catch (error) {
+    console.error('Error fetching Monobank data:', error);
+    throw new Error(
+      'Failed to fetch data from Monobank API.',
+    );
+  }
+};

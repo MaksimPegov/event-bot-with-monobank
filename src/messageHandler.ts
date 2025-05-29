@@ -3,7 +3,7 @@ import { Journeys, UserState } from './handlers/state';
 import {
   handleRegistration,
   processRegistrationHandler,
-} from './handlers/registrationHandler';
+} from './handlers/handleRegistrationFlow';
 
 export interface RegistrationHandlerResponse {
   message: string;
