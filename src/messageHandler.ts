@@ -1,9 +1,9 @@
 import { Context } from 'grammy';
-import { Journeys, UserState } from './handlers/state';
+import { Journeys, UserState } from './routers/state';
 import {
   handleRegistration,
-  processRegistrationHandler,
-} from './handlers/handleRegistrationFlow';
+  processRegistrationHandlerResponse,
+} from './routers/handleRegistrationFlow';
 
 export interface RegistrationHandlerResponse {
   message: string;
@@ -37,15 +37,10 @@ export const handleMessage = async (
         userState.step,
         userMessage,
       );
-      const { message, newUserState } =
-        processRegistrationHandler(registrationResponse);
+      return processRegistrationHandlerResponse(
+        registrationResponse,
+      );
 
-      return {
-        message:
-          message +
-          '\n---\nYou can cancel registration anytime by typing /cancel.',
-        newUserState,
-      };
     default:
       return {
         message:

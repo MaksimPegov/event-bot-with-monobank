@@ -5,14 +5,17 @@ import {
   RegistrationSteps,
   Journeys,
   UserState,
-} from './handlers/state';
+} from './routers/state';
 
 // Load environment variables from ~/.zshrc
 config();
 
 const bot = new Bot(process.env.BOT_TOKEN || ''); // Ensure BOT_TOKEN is set in the .env file
 
-const userStates = new Map<number, UserState | undefined>(); // userId -> state
+export const USER_STATES = new Map<
+  number,
+  UserState | undefined
+>(); // userId -> state
 
 const commands = {
   start: 'Back to the start',
@@ -39,7 +42,7 @@ bot.command('register', (ctx) => {
   if (!userId) return;
 
   // Set the user's state to 'awaiting_name'
-  userStates.set(userId, {
+  USER_STATES.set(userId, {
     journey: Journeys.registration,
     // step: RegistrationSteps.awaiting_name,
     step: RegistrationSteps.awaiting_payment,
@@ -79,7 +82,7 @@ bot.on('message', async (ctx) =>
     const userId = ctx.from?.id;
     if (!userId) return;
 
-    const state = userStates.get(userId);
+    const state = USER_STATES.get(userId);
     if (!state) {
       ctx.reply(
         'Oh! I am not sure what you mean. Please use /commands to see the list of commands.',
@@ -103,7 +106,7 @@ bot.on('message', async (ctx) =>
       input,
     );
     ctx.reply(message, { parse_mode: 'HTML' });
-    userStates.set(userId, newUserState);
+    USER_STATES.set(userId, newUserState);
   },
 );
 

@@ -3,10 +3,7 @@ import axios from 'axios';
 let cachedResponse: any = null;
 let lastRequestTimestamp: number | null = null;
 
-export type fetchMonobankDataResponse = {
-  data: any;
-  timeLeft: number | null;
-};
+const MONOBANK_TIMEOUT = 60 * 1000; // 1 minute
 
 /**
  * Fetches Monobank data for a specific jar ID and user timestamp.
@@ -17,15 +14,21 @@ export type fetchMonobankDataResponse = {
  * @returns An object containing the fetched data and time left until the next request can be made.
  */
 
+export type fetchMonobankDataResponse = {
+  data: any;
+  timeLeft: number | null;
+};
+
 export const fetchMonobankData = async (
   jarId: string,
   userTimestamp: number,
 ): Promise<fetchMonobankDataResponse> => {
-  const nowTimestamp = Math.floor(Date.now() / 1000);
+  const nowTimestamp = Date.now();
 
   // Check if the user's timestamp is earlier than the last request timestamp
   if (
     lastRequestTimestamp &&
+    userTimestamp &&
     userTimestamp < lastRequestTimestamp
   ) {
     return {
@@ -37,13 +40,14 @@ export const fetchMonobankData = async (
   // Check if the last request was made less than 1 minute ago
   if (
     lastRequestTimestamp &&
-    nowTimestamp - lastRequestTimestamp < 60
+    nowTimestamp - lastRequestTimestamp < MONOBANK_TIMEOUT
   ) {
     const timeLeft =
-      60 - (nowTimestamp - lastRequestTimestamp);
+      MONOBANK_TIMEOUT -
+      (nowTimestamp - lastRequestTimestamp);
     return {
       data: null,
-      timeLeft,
+      timeLeft: timeLeft,
     };
   }
 
@@ -69,7 +73,7 @@ export const fetchMonobankData = async (
       timeLeft: null,
     };
   } catch (error) {
-    console.error('Error fetching Monobank data:', error);
+    console.log('Error fetching Monobank data:', error);
     throw new Error(
       'Failed to fetch data from Monobank API.',
     );

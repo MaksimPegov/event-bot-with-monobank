@@ -4,8 +4,8 @@ import {
   validateEmail,
   validatePhone,
 } from '../helpers/registrationHelpers';
-import { validatePayment } from '../helpers/paymentsHelper';
 import dotenv from 'dotenv';
+import { runPaymentValidation } from '../helpers/paymentsHelpers';
 
 dotenv.config();
 
@@ -36,7 +36,7 @@ export const handleRegistration = async (
   switch (step) {
     case RegistrationSteps.awaiting_name:
       return {
-        message: `Great ${userMessage}, we almost there! We need is your email address.`,
+        message: `Great ${userMessage}, we're almost there! Please provide your email address.`,
         newStep: RegistrationSteps.awaiting_email,
       };
 
@@ -70,12 +70,11 @@ export const handleRegistration = async (
       }
 
     case RegistrationSteps.awaiting_payment:
-      return await validatePayment(ctx, jarId);
+      return runPaymentValidation(ctx, jarId);
 
     default:
       return {
-        message:
-          'Hmm... Something went wrong. (handleRegistration)',
+        message: 'Hmm... Something went wrong.',
         newStep: step,
       };
   }
@@ -87,7 +86,7 @@ export const handleRegistration = async (
  * @param response - The response from the handleRegistration.
  * @returns An object containing the message and the new user state.
  */
-export const processRegistrationHandler = (
+export const processRegistrationHandlerResponse = (
   response: RegistrationHandlerResponse,
 ) => {
   if (response.newStep === RegistrationSteps.registered) {
