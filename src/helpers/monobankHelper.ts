@@ -53,16 +53,17 @@ export const fetchMonobankData = async (
 
   // Perform the request
   try {
-    const timestamp30daysAgo =
-      nowTimestamp - 30 * 24 * 60 * 60;
-    const response = await axios.get(
-      `https://api.monobank.ua/personal/statement/${jarId}/${timestamp30daysAgo}/${nowTimestamp}`,
-      {
-        headers: {
-          'X-Token': process.env.MONOBANK_API_TOKEN || '',
-        },
-      },
+    const timestamp30daysAgo = Math.floor(
+      (nowTimestamp - 30 * 24 * 60 * 60 * 1000) / 1000,
     );
+    const url = `https://api.monobank.ua/personal/statement/${jarId}/${timestamp30daysAgo}/${nowTimestamp}`;
+
+    console.log('Sending request to Monobank API:', url);
+    const response = await axios.get(url, {
+      headers: {
+        'X-Token': process.env.MONOBANK_API_TOKEN || '',
+      },
+    });
 
     // Cache the response and update the last request timestamp
     cachedResponse = response.data;
