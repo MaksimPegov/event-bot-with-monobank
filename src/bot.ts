@@ -17,13 +17,6 @@ export const USER_STATES = new Map<
   UserState | undefined
 >(); // userId -> state
 
-const commands = {
-  start: 'Back to the start',
-  register: 'Register for the event',
-  commands: 'List of commands',
-  help: 'Contact information for help',
-};
-
 // Handle the /start command.
 bot.command('start', async (ctx) => {
   await ctx.replyWithPhoto(
@@ -51,20 +44,6 @@ bot.command('register', (ctx) => {
 
   ctx.reply(
     'Please send your name so we can register you for the event.\nYou can cancel registration process anytime by typing /cancel.',
-    { parse_mode: 'HTML' },
-  );
-});
-
-// Handle the /commands command.
-bot.command('commands', (ctx) => {
-  const commandList = Object.entries(commands)
-    .map(
-      ([command, description]) =>
-        `/${command} - ${description}`,
-    )
-    .join('\n');
-  ctx.reply(
-    `Here are the available commands:\n${commandList}`,
     { parse_mode: 'HTML' },
   );
 });
@@ -110,6 +89,21 @@ bot.on('message', async (ctx) =>
     USER_STATES.set(userId, newUserState);
   },
 );
+
+bot.api.setMyCommands([
+  {
+    command: 'start',
+    description: 'Get started with the bot',
+  },
+  {
+    command: 'register',
+    description: 'Register for the event',
+  },
+  {
+    command: 'help',
+    description: 'Contact information for help',
+  },
+]);
 
 // Now that you specified how to handle messages, you can start your bot.
 // This will connect to the Telegram servers and wait for messages.
