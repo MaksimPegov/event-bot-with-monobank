@@ -1,4 +1,4 @@
-import { Bot } from 'grammy';
+import { Bot, InlineKeyboard } from 'grammy';
 import { config } from 'dotenv';
 import { handleMessage } from './messageHandler';
 import {
@@ -17,20 +17,26 @@ export const USER_STATES = new Map<
   UserState | undefined
 >(); // userId -> state
 
+const inlineKeyboard = new InlineKeyboard().text(
+  'REGISTER',
+  'register',
+);
+
 // Handle the /start command.
 bot.command('start', async (ctx) => {
   await ctx.replyWithPhoto(
     'https://media.licdn.com/dms/image/v2/D4D22AQEJQ_mqN4VY4A/feedshare-shrink_2048_1536/B4DZX9YfhWGkAw-/0/1743712814429?e=1750291200&v=beta&t=BF1m3T-Jx4YYeysgd6DeIIRcQWDW9GoayLz_TExtNo4', // Replace with the URL or file path of your image
     {
       caption:
-        'Hello lady/gentlemen! I am a bot that can register you for an event by Olena Mir!\n---\n/register - to register for the event\ncommands - to see the list of commands',
+        'Hello lady/gentlemen! I am a bot that can register you for an event by Olena Mir!',
       parse_mode: 'HTML',
+      reply_markup: inlineKeyboard,
     },
   );
 });
 
 // Handle the /register command.
-bot.command('register', (ctx) => {
+bot.callbackQuery('register', async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
@@ -94,10 +100,6 @@ bot.api.setMyCommands([
   {
     command: 'start',
     description: 'Get started with the bot',
-  },
-  {
-    command: 'register',
-    description: 'Register for the event',
   },
   {
     command: 'help',
