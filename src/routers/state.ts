@@ -1,6 +1,14 @@
+export type User = {
+  id: number;
+  email?: string;
+  phone?: string;
+  name?: string;
+};
+
 export type UserState = {
   journey: Journeys;
   step: RegistrationSteps;
+  user: User;
 };
 
 export enum Journeys {

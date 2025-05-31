@@ -1,5 +1,5 @@
 import { Context } from 'grammy';
-import { Journeys, RegistrationSteps } from './state';
+import { Journeys, RegistrationSteps, User } from './state';
 import {
   validateEmail,
   validatePhone,
@@ -15,6 +15,7 @@ const jarId = process.env.JAR_ID || '';
 export interface RegistrationHandlerResponse {
   message: string;
   newStep: RegistrationSteps;
+  user: User;
 }
 
 /**
@@ -29,15 +30,14 @@ export const handleRegistration = async (
   ctx: Context,
   step: RegistrationSteps,
   userMessage: string,
-): Promise<{
-  message: string;
-  newStep: RegistrationSteps;
-}> => {
+  user: User,
+): Promise<RegistrationHandlerResponse> => {
   switch (step) {
     case RegistrationSteps.awaiting_name:
       return {
         message: `Great ${userMessage}, we're almost there! Please provide your email address.`,
         newStep: RegistrationSteps.awaiting_email,
+        user: { ...user, name: userMessage },
       };
 
     case RegistrationSteps.awaiting_email:
@@ -46,11 +46,13 @@ export const handleRegistration = async (
           message:
             'Thank you! Your email has been verified. Please send your phone number.',
           newStep: RegistrationSteps.awaiting_phone,
+          user: { ...user, email: userMessage },
         };
       } else {
         return {
           message: 'The email you provided is invalid.',
           newStep: step,
+          user,
         };
       }
 
@@ -60,22 +62,31 @@ export const handleRegistration = async (
         return {
           message: `Thank you! Your phone number has been verified successfully.\nFinal step: please donate to the JAR:\n${jarLink}\nIMPORTANT: Please provide this code as a comment to your donation: <b><code>${ctx.from?.id}</code></b>.\nType /confirm when you are done.`,
           newStep: RegistrationSteps.awaiting_payment,
+          user: { ...user, phone },
         };
       } else {
         return {
           message:
             'The phone number you provided is invalid. Please send a valid phone number.',
           newStep: step,
+          user,
         };
       }
 
     case RegistrationSteps.awaiting_payment:
-      return runPaymentValidation(ctx, jarId);
+      const { message, newStep } =
+        await runPaymentValidation(ctx, jarId, user);
+      return {
+        message,
+        newStep,
+        user,
+      };
 
     default:
       return {
         message: 'Hmm... Something went wrong.',
         newStep: step,
+        user,
       };
   }
 };
@@ -101,6 +112,7 @@ export const processRegistrationHandlerResponse = (
     newUserState: {
       journey: Journeys.registration,
       step: response.newStep,
+      user: response.user,
     },
   };
 };

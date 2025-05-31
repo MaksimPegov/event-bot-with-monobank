@@ -36,6 +36,7 @@ export const handleMessage = async (
         ctx,
         userState.step,
         userMessage,
+        userState.user,
       );
       return processRegistrationHandlerResponse(
         registrationResponse,

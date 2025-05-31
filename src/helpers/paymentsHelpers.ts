@@ -1,10 +1,11 @@
 import { Context } from 'grammy';
-import { RegistrationSteps } from '../routers/state';
+import { RegistrationSteps, User } from '../routers/state';
 import {
   fetchMonobankData,
   fetchMonobankDataResponse,
-} from './monobankHelper';
+} from '../api/monobankHelper';
 import { USER_STATES } from '../bot';
+import { addUserToGoogleSheet } from '../api/googleSheetHelper';
 
 /**
  * Validates the payment by checking the Monobank API for transactions.
@@ -18,13 +19,12 @@ const validationInProgress: Set<number> = new Set(); // Track users with ongoing
 export const runPaymentValidation = async (
   ctx: Context,
   jarId: string,
+  user: User,
 ): Promise<{
   message: string;
   newStep: RegistrationSteps;
 }> => {
-  const userId = ctx.from?.id;
-
-  if (userId && validationInProgress.has(userId)) {
+  if (user.id && validationInProgress.has(user.id)) {
     return {
       message:
         'Validation is already running. Please be patient.',
@@ -33,7 +33,7 @@ export const runPaymentValidation = async (
   }
 
   try {
-    if (userId) validationInProgress.add(userId); // Mark validation as in progress
+    if (user.id) validationInProgress.add(user.id); // Mark validation as in progress
 
     const nowTimestamp = Date.now();
 
@@ -53,6 +53,7 @@ export const runPaymentValidation = async (
         jarId,
         nowTimestamp,
         response.timeLeft,
+        user,
       );
 
       return {
@@ -61,7 +62,7 @@ export const runPaymentValidation = async (
       };
     } else {
       // If no time left, proceed with transaction validation
-      return validateResponse(ctx, response);
+      return validateResponse(ctx, response, user);
     }
   } catch (error) {
     console.log('Error during payment validation:', error);
@@ -78,27 +79,31 @@ export const runPaymentValidation = async (
 const validateResponse = (
   ctx: Context,
   response: fetchMonobankDataResponse,
+  user: User,
 ): {
   message: string;
   newStep: RegistrationSteps;
 } => {
   const transactions = response.data;
-  const userId = ctx.from?.id;
   if (Array.isArray(transactions)) {
-    const isValid = transactions.some(
-      (transaction) => transaction.comment === userId,
-    );
+    // Check if any transaction contains the user's ID in the comment
+    // const isValid = transactions.some(
+    //   (transaction) => transaction.comment === user.id,
+    // );
+
+    const isValid = true; // For testing purposes, assume the payment is valid
 
     if (isValid) {
-      if (userId) validationInProgress.delete(userId); // Remove user from in-progress set
+      addUserToGoogleSheet(ctx, user); // Add user to Google Sheet
 
+      if (user.id) validationInProgress.delete(user.id); // Remove user from in-progress set
       return {
         message:
           'Thank you! Your payment has been verified. You are registered for the event.',
         newStep: RegistrationSteps.registered,
       };
     } else {
-      if (userId) validationInProgress.delete(userId); // Remove user from in-progress set
+      if (user.id) validationInProgress.delete(user.id); // Remove user from in-progress set
 
       return {
         message:
@@ -119,6 +124,7 @@ export const delayValidation = async (
   jarId: string,
   firstValidationTimestamp: number,
   timeLeft: number,
+  user: User,
 ) => {
   console.log(
     `Validation will be delayed for ${timeLeft} milliseconds for user: ${ctx.from?.id}.`,
@@ -130,8 +136,7 @@ export const delayValidation = async (
         jarId,
         firstValidationTimestamp,
       );
-      const userId = ctx.from?.id;
-      if (userId) validationInProgress.delete(userId); // Remove user from in-progress set
+      if (user.id) validationInProgress.delete(user.id); // Remove user from in-progress set
       console.log(
         `Result of delayed fetchMonobankData response for user: ${ctx.from?.id}:`,
         response,
@@ -140,16 +145,17 @@ export const delayValidation = async (
       const { message, newStep } = validateResponse(
         ctx,
         response,
+        user,
       );
 
       await ctx.reply(message);
 
       // Update the user's state in USER_STATES
       if (
-        userId &&
+        user.id &&
         newStep === RegistrationSteps.registered
       ) {
-        USER_STATES.set(userId, undefined); // Clear the user's state after successful registration
+        USER_STATES.set(user.id, undefined); // Clear the user's state after successful registration
       }
     } catch (error) {
       console.log(

@@ -45,7 +45,8 @@ bot.command('register', (ctx) => {
   USER_STATES.set(userId, {
     journey: Journeys.registration,
     step: RegistrationSteps.awaiting_name,
-    // step: RegistrationSteps.awaiting_payment, for payment testing
+    user: { id: userId }, // Initialize with an empty user object
+    // step: RegistrationSteps.awaiting_payment,
   });
 
   ctx.reply(
