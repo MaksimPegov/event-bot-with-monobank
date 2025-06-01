@@ -2,3 +2,5 @@ build
 node_modules
 .env
 google_api_credentials.json
+
+scripts/fly/setup_fly_env.sh

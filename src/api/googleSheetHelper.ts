@@ -9,8 +9,11 @@ dotenv.config();
 
 // Authenticate with Google API
 const authenticateGoogle = () => {
+  const credentialsPath =
+    process.env.GOOGLE_CREDENTIALS_PATH ||
+    'google_api_credentials.json';
   const credentials = JSON.parse(
-    fs.readFileSync('google_api_credentials.json', 'utf8'),
+    fs.readFileSync(credentialsPath, 'utf8'),
   );
   const auth = new google.auth.GoogleAuth({
     credentials,

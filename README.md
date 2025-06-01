@@ -90,27 +90,73 @@ You need a **service account key** to access Google Sheets from your bot.
 
 ## 🚀 Run the Bot Locally
 
-To build and run your bot:
+#### To build and run your bot with npm:
 
 ```bash
-./build_and_run.sh
+./scripts/local/build_and_run.sh
 ```
 
 This script will compile your TypeScript code (if needed) and start the bot.
+
+#### If you want to run the bot using docker:
+
+```bash
+./scripts/local/build_and_run_docker.sh
+```
+
+This script will build the Docker image and run the bot inside a container.
+
+---
+
+## 📦 Deploying to Fly.io
+
+To deploy your bot to [Fly.io](https://fly.io/):
+
+1. Make sure you have the [Fly CLI](https://fly.io/docs/getting-started/installing-flyctl/) installed and logged in.
+2. Rename `scripts/fly/setup_fly_env_example.sh` to `scripts/fly/setup_fly_env.sh` and fill in the necessary environment variables in that file.
+3. Setup your Fly environment:
+   ```bash
+   ./scripts/fly/setup_fly_env.sh
+   ```
+4. Deploy your bot:
+   ```bash
+   flyctl deploy
+   ```
+5. Provide your google_api_credentials.json file to Fly volume:
+   ```bash
+   ./scripts/fly/upload_credentials_file.sh
+   ```
+6. Get your machine's ID:
+   ```bash
+   flyctl status
+   ```
+7. Restart your bot:
+   ```bash
+   flyctl machines restart <your-machine-id>
+   ```
+8. Inspect logs:
+   ```bash
+   flyctl logs
+   ```
 
 ---
 
 ## 🛠 Project Structure (Simplified)
 
 ```
+
 src/
 ├── api/
 ├── routers/
 ├── helpers/
+├── scripts/
+| ├── local/
+| └── fly/
 ├── bot.ts
 ├── ...
 .env
 google_api_credentials.json
+
 ```
 
 ---
@@ -126,3 +172,7 @@ google_api_credentials.json
 ## 📄 License
 
 MIT – Use freely and contribute if you'd like!
+
+```
+
+```
