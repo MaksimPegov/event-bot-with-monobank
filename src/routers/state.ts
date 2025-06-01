@@ -22,3 +22,8 @@ export enum RegistrationSteps {
   awaiting_payment = 'awaiting_payment',
   registered = 'registered',
 }
+
+export const USER_STATES = new Map<
+  number,
+  UserState | undefined
+>();

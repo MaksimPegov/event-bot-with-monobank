@@ -4,25 +4,30 @@ import { handleMessage } from './messageHandler';
 import {
   RegistrationSteps,
   Journeys,
-  UserState,
+  USER_STATES,
 } from './routers/state';
+import { autoRetry } from '@grammyjs/auto-retry';
 
-// Load environment variables from ~/.zshrc
 config();
 
 const bot = new Bot(process.env.BOT_TOKEN || ''); // Ensure BOT_TOKEN is set in the .env file
+bot.api.config.use(autoRetry());
+bot.api.setMyCommands([
+  {
+    command: 'start',
+    description: 'Get started with the bot',
+  },
+  {
+    command: 'help',
+    description: 'Contact information for help',
+  },
+]);
 
-export const USER_STATES = new Map<
-  number,
-  UserState | undefined
->(); // userId -> state
-
+// Handle the /start command.
 const inlineKeyboard = new InlineKeyboard().text(
   'REGISTER',
   'register',
 );
-
-// Handle the /start command.
 bot.command('start', async (ctx) => {
   await ctx.replyWithPhoto(
     'https://media.licdn.com/dms/image/v2/D4D22AQEJQ_mqN4VY4A/feedshare-shrink_2048_1536/B4DZX9YfhWGkAw-/0/1743712814429?e=1750291200&v=beta&t=BF1m3T-Jx4YYeysgd6DeIIRcQWDW9GoayLz_TExtNo4', // Replace with the URL or file path of your image
@@ -35,7 +40,7 @@ bot.command('start', async (ctx) => {
   );
 });
 
-// Handle the /register command.
+// Handle the REGISTER button click.
 bot.callbackQuery('register', async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
@@ -44,7 +49,7 @@ bot.callbackQuery('register', async (ctx) => {
   USER_STATES.set(userId, {
     journey: Journeys.registration,
     step: RegistrationSteps.awaiting_name,
-    user: { id: userId }, // Initialize with an empty user object
+    user: { id: userId }, // Initialize with user ID
     // step: RegistrationSteps.awaiting_payment,
   });
 
@@ -95,20 +100,6 @@ bot.on('message', async (ctx) =>
     USER_STATES.set(userId, newUserState);
   },
 );
-
-bot.api.setMyCommands([
-  {
-    command: 'start',
-    description: 'Get started with the bot',
-  },
-  {
-    command: 'help',
-    description: 'Contact information for help',
-  },
-]);
-
-// Now that you specified how to handle messages, you can start your bot.
-// This will connect to the Telegram servers and wait for messages.
 
 // Start the bot.
 bot.start();
