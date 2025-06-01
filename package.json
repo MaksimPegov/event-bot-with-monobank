@@ -15,5 +15,9 @@
     "dotenv": "^16.5.0",
     "googleapis": "^149.0.0",
     "grammy": "^1.36.1"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/bot.js"
   }
 }

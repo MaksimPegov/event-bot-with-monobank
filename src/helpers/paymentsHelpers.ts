@@ -1,10 +1,13 @@
 import { Context } from 'grammy';
-import { RegistrationSteps, User } from '../routers/state';
+import {
+  RegistrationSteps,
+  User,
+  USER_STATES,
+} from '../routers/state';
 import {
   fetchMonobankData,
   fetchMonobankDataResponse,
 } from '../api/monobankHelper';
-import { USER_STATES } from '../bot';
 import { addUserToGoogleSheet } from '../api/googleSheetHelper';
 
 /**
